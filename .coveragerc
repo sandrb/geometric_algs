@@ -1,0 +1,7 @@
+[run]
+branch = true
+source = spanners
+
+[report]
+fail_under = 90
+show_missing = true
