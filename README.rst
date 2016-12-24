@@ -39,12 +39,14 @@ dependencies. These packages will be loaded as vendor modules at runtime.
 
 The project can be installed using:
 
+.. code-block:: sh
+
     $ pip install -e .
 
 
-  The project can be installed in development mode using:
+The project can be installed in development mode using:
 
-  .. code-block:: sh
+.. code-block:: sh
 
       $ pip install -r dev-requirements.txt
 
