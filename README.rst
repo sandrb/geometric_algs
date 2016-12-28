@@ -50,6 +50,8 @@ The project can be installed in development mode using:
 
       $ pip install -r dev-requirements.txt
 
+Windows version:
+> python -m pip install -r dev-requirements.txt
 
 Running
 =======
