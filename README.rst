@@ -62,6 +62,9 @@ To generate a data challenge file run the following command:
 
     $ spanners generate 1000 1000 40 20 data.txt
 
+Or if in windows: service.generate(1000,1000,40,20,"data")
+Note: first go to the correct directory, open python terminal and import service (from spanners import service)
+
 
 To view the problem of a data challenge file in an image run the following
 command:
