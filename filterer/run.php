@@ -31,7 +31,7 @@ for($i = 0; $i < $m; $i++){
 
 echo count($vertices) . "<br>";
 echo count($obstacles) . "<br>";
-echo $lines[2];
+echo $lines[2] . "<br>";
 foreach($vertices as $vertex){
     echo $vertex["x"] . " " . $vertex["y"] . "<br>";
 }
