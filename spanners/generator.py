@@ -7,6 +7,7 @@ TODO:
 
 
 """
+import collections
 import math
 import random
 
@@ -93,17 +94,83 @@ def _generate_point(x_max, y_max, unique_points, obstacle=None):
 
 
 def _in_obstacle(point, obstacle):
-    # TODO: not yet peferfect
-    intersections = 0
+    """
+    Use `ray casting`_ to determine if a point is in an obstacle.
+
+    This function emits a horizontal ray to the right.
+    Points on the edges and vertices of the obstacle are also
+    considered to be in the obstacle.
+
+    Args:
+        point (Point): The point for which to determine if it is in the
+            obstacle.
+        obstacle (Sequence[Point]): The obstacle for which to determine
+            if the point is located in it.
+
+    Returns:
+        bool: Whether the point is located in the obstacle.
+
+    .. _ray casting
+        https://en.wikipedia.org/wiki/Ray_casting
+
+    """
+    y_positions = collections.deque(p.y - point.y for p in obstacle)
+    colinear = False
+    inside = False
+    intersects = False
     previous_point = obstacle[-1]
     for current_point in obstacle:
         if previous_point.y - current_point.y != 0:
-            if previous_point.x >= point.x and current_point.x >= point.x:
-                if (previous_point.y <= point.y <= current_point.y or
-                        previous_point.y >= point.y >= current_point.y):
-                    intersections += 1
+            # Parallel lines have zero or inifinte intersections.
+            # Either way, do not count them.
+            if (previous_point.y <= point.y <= current_point.y or
+                    previous_point.y >= point.y >= current_point.y):
+                # One point above the ray and one point below the ray.
+                if previous_point.x - current_point.x == 0:
+                    # Vertical line segment.
+                    x = current_point.x
+                else:
+                    a = _calculate_slope(previous_point, current_point)
+                    b = _calculate_y_intercept(current_point, a)
+                    x = (point.y - b) / a
+                if math.isclose(x, point.x):
+                    # If point on line segment, then colinear.
+                    colinear = True
+                else:
+                    # Next statement is safe, since values are not close.
+                    intersects = point.x < x
+        elif not colinear:
+            # If point on parallel line segment, then colinear.
+            colinear = point.y == current_point.y and (
+                previous_point.x <= point.x <= current_point.x or
+                previous_point.x >= point.x >= current_point.x
+            )
+
+        # A point on a ray is only an intersection if the clostest
+        # neighboring points are on opposite sides of the ray.
+        if intersects and y_positions[-1] == 0:
+            # Already encountered this intersection.
+            intersects = False
+        elif intersects and y_positions[0] == 0:
+                next_y = next(
+                    (i for i in y_positions if i != 0),
+                    y_positions[-1]
+                )
+                intersects = (y_positions[-1] > 0) ^ (next_y > 0)
+        if intersects:
+            inside = not inside
+            intersects = False
         previous_point = current_point
-    return intersections % 2 == 1
+        y_positions.rotate(-1)
+    return colinear or inside
+
+
+def _calculate_slope(p, q):
+    return (q.y - p.y) / (q.x - p.x)
+
+
+def _calculate_y_intercept(p, a):
+    return p.y - a * p.x
 
 
 def _convert_to_simple_polygon_1(points):
@@ -113,8 +180,8 @@ def _convert_to_simple_polygon_1(points):
     right = points[-1]
     above = []
     below = []
-    a = (right.y - left.y) / (right.x - left.x)  # slope
-    b = left.y - a * left.x
+    a = _calculate_slope(left, right)
+    b = _calculate_y_intercept(left, a)
     for point in points[1: -1]:
         if point.y < a * point.x + b:
             below.append(point)

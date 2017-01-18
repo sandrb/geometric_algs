@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.6
 """
-This module holds tests for the `spanners.visualizer` module.
+This module holds tests for the `spanners.challenge` module.
 
 """
 import pytest

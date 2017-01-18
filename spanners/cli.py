@@ -4,7 +4,8 @@ Calculate geometric spanners amidst obstacles.
 
 Usage:
     {exec} generate X Y N M [-s SEED] FILE_OUT [-p POLY]
-    {exec} visualize FILE_IN FILE_OUT
+    {exec} render (problem | solution [-a ALGO]) FILE_IN [FILE_OUT]
+    {exec} show (problem | solution [-a ALGO]) FILE_IN
     {exec} (-h | --help)
     {exec} (-V | --version)
 
@@ -28,6 +29,9 @@ Arguments:
         The upper limit of a y-coordinate that can be generated.
 
 Options:
+    -a ALGO, --algorithm ALGO
+        The algorithm to use for computing the solution.
+
     -h, --help
         Show this screen.
 
@@ -61,8 +65,8 @@ def main():
         ValueError: If M, N, X, Y, POLY or SEED is not an integer.
 
     """
-    args = docopt.docopt(
-        __doc__.format(exec=sys.argv[0]), version=spanners.__version__)
+    doc = __doc__.format(exec=sys.argv[0])
+    args = docopt.docopt(doc, version=spanners.__version__)
     if args['generate']:
         x = int(args['X'])
         y = int(args['Y'])
@@ -80,12 +84,17 @@ def main():
         service.generate(
             x, y, n, m,
             seed=seed, filename=args['FILE_OUT'], polygonizer=polygonizer)
-    elif args['visualize']:
-        service.visualize(args['FILE_IN'], args['FILE_OUT'])
+    elif args['render'] and args['problem']:
+        service.render_problem(args['FILE_IN'], args['FILE_OUT'])
+    elif args['render'] and args['solution']:
+        service.render_solution(
+            args['FILE_IN'], args['--algorithm'], args['FILE_OUT'])
+    elif args['show'] and args['problem']:
+        service.show_problem(args['FILE_IN'])
+    elif args['show'] and args['solution']:
+        service.show_solution(args['FILE_IN'], args['--algorithm'])
     else:  # pragma: no cover
-        raise ValueError(
-            'Expect one of the following as first argument:'.format(
-                ['generate', 'visualize']))
+        raise SystemExit(docopt.printable_usage(doc))
 
 
 if __name__ == '__main__':  # pragma: no cover

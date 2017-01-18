@@ -1,11 +1,25 @@
 #!/usr/bin/env python3.6
 """
-This module holds tests for the `spanners.visualizer` module.
+This module holds tests for the `spanners.service` module.
 
 """
 import pytest
 
 from spanners import service
+
+
+@pytest.fixture
+def m_open(mocker):
+    """
+    Provide a `mock_open` mock.
+
+    Returns:
+        MagicMock: A `mock_open` mock.
+
+    """
+    m_open = mocker.mock_open()
+    mocker.patch('spanners.service.open', m_open)
+    return m_open
 
 
 @pytest.mark.parametrize('filename, seed, expected', [
@@ -44,35 +58,156 @@ def test_generate(mocker, filename, seed, expected):
     assert m_dump.call_args == ((m_problem, m_open.return_value), {})
 
 
-@pytest.mark.parametrize(
-    'challenge_filename, image_filename, filetype, expected', [
-        ('challenge.txt', None, None, 'challenge'),
-        ('challenge.txt', None, 'png', 'challenge'),
-        ('challenge.txt', 'image.png', None, 'image.png'),
-        ('challenge.txt', 'image.png', 'png', 'image.png'),
-        ('challenge.file', None, None, 'challenge.file'),
-    ])
-def test_visualize(
-        mocker, challenge_filename, image_filename, filetype, expected):
+@pytest.mark.parametrize('challenge_filename, image_filename, expected', [
+    ('challenge.txt', None, 'challenge.png'),
+    ('challenge.txt', 'image.png', 'image.png'),
+    ('challenge.file', None, 'challenge.file.png'),
+])
+def test_render_problem(
+        mocker, m_open, challenge_filename, image_filename, expected):
     """
-    Test for `service.visualize`.
+    Test for `service.render_problem`.
 
     Args:
+        m_open (MagicMock): A `mock_open` mock.
         challenge_filename (str): The filename of the data challenge
-            file for which to visualize the problem.
+            file for which to render an image the problem.
         image_filename (str): The filename to use for the image of the
             problem.
-        filetype (str): The filetype of the image.
         expected (str): The expected image filename.
 
     """
-    m_open = mocker.mock_open()
-    mocker.patch('spanners.service.open', m_open)
     m_challenge = mocker.patch('spanners.service.challenge.load')
-    m_visualize = mocker.patch('spanners.service.visualizer.vizualize_problem')
+    m_render_problem = mocker.patch(
+        'spanners.service.visualizer.render_problem')
 
-    output = service.visualize(challenge_filename, image_filename, filetype)
+    output = service.render_problem(challenge_filename, image_filename)
     assert output is None
+
+    assert _is_challenge_loaded(m_open, m_challenge, challenge_filename)
+
+    assert m_render_problem.call_count == 1
+    m_problem = m_challenge.return_value
+    assert m_render_problem.call_args == ((m_problem, expected),)
+
+
+def test_show_problem(mocker, m_open):
+    """
+    Test for `service.show_problem`.
+
+    Args:
+        m_open (MagicMock): A `mock_open` mock.
+
+    """
+    challenge_filename = 'challenge.txt'
+    m_challenge = mocker.patch('spanners.service.challenge.load')
+    m_show_problem = mocker.patch('spanners.service.visualizer.show_problem')
+
+    output = service.show_problem(challenge_filename)
+    assert output is None
+
+    assert _is_challenge_loaded(m_open, m_challenge, challenge_filename)
+
+    assert m_show_problem.call_count == 1
+    m_problem = m_challenge.return_value
+    assert m_show_problem.call_args == ((m_problem,),)
+
+
+@pytest.mark.parametrize(
+    'challenge_filename, algorithm, image_filename, expected', [
+        ('challenge.txt', None, None, 'challenge_spanner.png'),
+        ('challenge.txt', None, 'image.png', 'image.png'),
+        ('challenge.file', None, None, 'challenge.file_spanner.png'),
+        ('challenge.txt', 'greedy', None, 'challenge_spanner.png'),
+        ('challenge.txt', 'greedy', 'image.png', 'image.png'),
+        ('challenge.file', 'greedy', None, 'challenge.file_spanner.png'),
+        ('challenge.txt', 'wspd', None, 'challenge_spanner.png'),
+        ('challenge.txt', 'wspd', 'image.png', 'image.png'),
+        ('challenge.file', 'wspd', None, 'challenge.file_spanner.png'),
+    ])
+def test_render_solution(
+        mocker, m_open, challenge_filename, algorithm, image_filename,
+        expected):
+    """
+    Test for `service.render_solution`.
+
+    Args:
+        m_open (MagicMock): A `mock_open` mock.
+        challenge_filename (str): The filename of the data challenge
+            file for which to render an image the problem.
+        algorithm (str): The algorithm to use.
+        image_filename (str): The filename to use for the image of the
+            problem.
+        expected (str): The expected image filename.
+
+    """
+    m_challenge = mocker.patch('spanners.service.challenge.load')
+    m_greedy = mocker.patch('spanners.service.greedy.compute_spanner')
+    m_wspd = mocker.patch('spanners.service.wspd.compute_spanner')
+    render_solution = mocker.patch(
+        'spanners.service.visualizer.render_solution')
+
+    if algorithm == 'wspd':
+        m_compute = m_wspd
+        m_not_compute = m_greedy
+    else:
+        m_compute = m_greedy
+        m_not_compute = m_wspd
+
+    output = service.render_solution(
+        challenge_filename, algorithm, image_filename)
+    assert output is None
+
+    assert _is_challenge_loaded(m_open, m_challenge, challenge_filename)
+    assert _is_solution_computed(m_compute, m_challenge.return_value)
+    assert not m_not_compute.called
+
+    assert render_solution.call_count == 1
+    m_problem = m_compute.return_value
+    assert render_solution.call_args == ((m_problem, expected),)
+
+
+@pytest.mark.parametrize('algorithm', [
+    None,
+    'greedy',
+    'wspd',
+])
+def test_show_solution(mocker, m_open, algorithm):
+    """
+    Test for `service.show_solution`.
+
+    Args:
+        m_open (MagicMock): A `mock_open` mock.
+        algorithm (str): The algorithm to use.
+
+    """
+    challenge_filename = 'challenge.txt'
+    m_challenge = mocker.patch('spanners.service.challenge.load')
+    m_greedy = mocker.patch('spanners.service.greedy.compute_spanner')
+    m_wspd = mocker.patch('spanners.service.wspd.compute_spanner')
+    m_show_solution = mocker.patch('spanners.service.visualizer.show_solution')
+
+    if algorithm == 'wspd':
+        m_compute = m_wspd
+        m_not_compute = m_greedy
+    else:
+        m_compute = m_greedy
+        m_not_compute = m_wspd
+
+    output = service.show_solution(challenge_filename, algorithm)
+    assert output is None
+
+    assert _is_challenge_loaded(m_open, m_challenge, challenge_filename)
+    assert _is_solution_computed(m_compute, m_challenge.return_value)
+    assert not m_not_compute.called
+
+    assert m_show_solution.call_count == 1
+    m_problem = m_compute.return_value
+    assert m_show_solution.call_args == ((m_problem,),)
+
+
+def _is_challenge_loaded(m_open, m_challenge, challenge_filename):
+    __tracebackhide__ = True
 
     assert m_open.call_count == 1
     assert m_open.call_args == ((challenge_filename,),)
@@ -80,9 +215,16 @@ def test_visualize(
     assert m_challenge.call_count == 1
     assert m_challenge.call_args == ((m_open.return_value,),)
 
-    assert m_visualize.call_count == 1
-    m_problem = m_challenge.return_value
-    assert m_visualize.call_args[0] == (m_problem, expected, filetype)
+    return True
+
+
+def _is_solution_computed(m_compute, m_problem):
+    __tracebackhide__ = True
+
+    assert m_compute.call_count == 1
+    assert m_compute.call_args == ((m_problem,),)
+
+    return True
 
 
 if __name__ == '__main__':

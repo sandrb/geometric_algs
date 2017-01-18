@@ -30,6 +30,7 @@ setup(
         # Cheese shop dependencies
         'docopt ~= 0.6.2',
         'matplotlib ~= 1.5.3',
+        'pyvisgraph ~= 0.1.4',
     ],
     entry_points={
         'console_scripts': [

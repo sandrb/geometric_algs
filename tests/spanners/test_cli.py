@@ -86,21 +86,101 @@ def test_main_generate_value_error(mocker, argv):
     assert m_generate.call_count == 0
 
 
-def test_main_visualize(mocker):
+@pytest.mark.parametrize('file_out', [
+    None,
+    'out.png',
+])
+def test_main_render_problem(mocker, file_out):
     """
-    Test for `cli.main` which tests the visualize command.
+    Test for `cli.main` which tests the 'render problem' command.
+
+    Args:
+        file_out (str): The name of the output file.
 
     """
-    m_visualize = mocker.patch('spanners.cli.service.visualize')
+    m_render = mocker.patch('spanners.cli.service.render_problem')
 
-    argv = 'exec visualize in.txt out.png'.split()
-    mocker.patch('spanners.cli.sys.argv', argv)
+    argv = 'exec render problem in.txt'.split()
+    if file_out:
+        argv.append(file_out)
 
-    output = cli.main()
+    output = _patch_argv_and_call_main(mocker, argv)
     assert output is None
 
-    assert m_visualize.call_count == 1
-    assert m_visualize.call_args[0] == ('in.txt', 'out.png')
+    assert m_render.call_count == 1
+    assert m_render.call_args[0] == ('in.txt', file_out)
+
+
+@pytest.mark.parametrize('argv, algorithm, file_out', [
+    ('exec render solution in.txt', None, None),
+    ('exec render solution -a greedy in.txt', 'greedy', None),
+    ('exec render solution -a wspd in.txt', 'wspd', None),
+    ('exec render solution in.txt out.png', None, 'out.png'),
+    ('exec render solution -a greedy in.txt out.png', 'greedy', 'out.png'),
+    ('exec render solution -a wspd in.txt out.png', 'wspd', 'out.png'),
+])
+def test_main_render_solution(mocker, argv, algorithm, file_out):
+    """
+    Test for `cli.main` which tests the 'render solution' command.
+
+    Args:
+        argv (str): The command used on the cli.
+        algorithm (str): The algorithm expected to be used.
+        file_out (str): The name of the output file.
+
+    """
+    m_render = mocker.patch('spanners.cli.service.render_solution')
+
+    output = _patch_argv_and_call_main(mocker, argv.split())
+    assert output is None
+
+    assert m_render.call_count == 1
+    assert m_render.call_args[0] == ('in.txt', algorithm, file_out)
+
+
+def test_main_show_problem(mocker):
+    """
+    Test for `cli.main` which tests the 'show problem' command.
+
+    """
+    m_show = mocker.patch('spanners.cli.service.show_problem')
+
+    argv = 'exec show problem in.txt'.split()
+
+    output = _patch_argv_and_call_main(mocker, argv)
+    assert output is None
+
+    assert m_show.call_count == 1
+    assert m_show.call_args[0] == ('in.txt',)
+
+
+@pytest.mark.parametrize('argv, algorithm', [
+    ('exec show solution in.txt', None),
+    ('exec show solution -a greedy in.txt', 'greedy'),
+    ('exec show solution -a wspd in.txt', 'wspd'),
+])
+def test_main_show_solution(mocker, argv, algorithm):
+    """
+    Test for `cli.main` which tests the 'show solution' command.
+
+    Args:
+        argv (str): The command used on the cli.
+        algorithm (str): The algorithm expected to be used.
+
+    """
+    m_show = mocker.patch('spanners.cli.service.show_solution')
+
+    output = _patch_argv_and_call_main(mocker, argv.split())
+    assert output is None
+
+    assert m_show.call_count == 1
+    assert m_show.call_args[0] == ('in.txt', algorithm)
+
+
+def _patch_argv_and_call_main(mocker, argv):
+    mocker.patch('spanners.cli.sys.argv', argv)
+    output = cli.main()
+    return output
 
 
 if __name__ == '__main__':
