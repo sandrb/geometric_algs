@@ -144,7 +144,15 @@ def _compute_solution(challenge_filename, algorithm):
         solution = wspd.compute_spanner(problem)
     else:
         solution = greedy.compute_spanner(problem)
+    _show_results(solution)
     return solution
+
+
+def _show_results(solution):
+    print('edges: {}'.format(len(solution)))
+    print('weight: {}'.format(solution.weight))
+    print('max_edges: {}'.format(solution.max_edges))
+    print('max_weight: {}'.format(solution.max_weight))
 
 
 def _load_challenge(challenge_filename):

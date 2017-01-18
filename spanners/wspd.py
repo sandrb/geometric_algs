@@ -221,7 +221,7 @@ def compute_spanner(problem):
     edges = set(
         edge for u, v in pairs
         for edge in owspd.shortest_path(u, v)[0])
-    max_edges = 0  # TODO
-    max_weight = 0  # TODO
+    max_edges = -1
+    max_weight = -1
     solution = models.Solution(problem, max_edges, max_weight, edges)
     return solution
