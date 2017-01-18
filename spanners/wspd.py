@@ -89,7 +89,7 @@ class Wspd:
         center_v = v.bounding_box.center if not v.point else v.point
         radius = max(radius_u, radius_v)
         edge = models.Edge(center_u, center_v)
-        return edge.length >= self.s * radius
+        return edge.length - 2 * radius > self.s * radius
 
     def __repr__(self):
         """
@@ -138,13 +138,13 @@ class ObstacleWspd(Wspd):
             bool: Whether the two quadtrees are well separated.
 
         """
-        separated = False
-        if not super().is_well_separated(u, v):
+        separated = super().is_well_separated(u, v)
+        if not separated:
             __, distance = self.shortest_path(u, v)
             radius_u = u.bounding_box.edge.length / 2 if u.point else 0
             radius_v = v.bounding_box.edge.length / 2 if v.point else 0
-            radius = min(radius_u, radius_v)
-            separated = distance >= self.s * radius
+            radius = max(radius_u, radius_v)
+            separated = distance - 2 * radius > self.s * radius
         return separated
 
     def shortest_path(self, u, v):
