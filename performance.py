@@ -22,7 +22,7 @@ def random_data(x=10000, y=10000, seed=42):
             service.generate(x, y, n, m, seed, filename)
 
 
-def _powers_of_two(start=2, end=12):
+def _powers_of_two(start=2, end=10):
     yield from (2 ** i for i in range(start, end))
 
 
@@ -50,7 +50,6 @@ def _solve(algorithm, data_dir):
             output_filename = os.path.join(data_dir, algorithm, filename[:-4])
             pickle_filename = output_filename + '.pickle'
             profile_filename = output_filename + '.profile'
-            service.solve(challenge_filename, algorithm, pickle_filename)
             cmd = 'service.solve(' \
                 'challenge_filename, algorithm, pickle_filename)'
             cProfile.runctx(cmd, globals(), locals(), profile_filename)

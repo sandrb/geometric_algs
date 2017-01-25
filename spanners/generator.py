@@ -57,7 +57,7 @@ def generate(max_x, max_y, n, m, seed=None, polygonizer=None):
 
     obstacle = _generate_simple_polygon(max_x, max_y, m, seed)
     points = _generate_points(max_x, max_y, n, obstacle, seed)
-    problem = models.Problem(points, obstacle, -1, -1)  # TODO: ratio
+    problem = models.Problem(points, obstacle, 3, 2)  # TODO: ratio
     return problem
 
 
