@@ -17,7 +17,7 @@ def random_data(x=10000, y=10000, seed=42):
     for m in _powers_of_two():
         for n in _powers_of_two():
             filename = os.path.join(
-                random_data_dir, '{}x{}_m-{}_n-{}_seed-{}.txt'.format(
+                random_data_dir, '{}x{}_m-{:0>5}_n-{:0>5}_seed-{}.txt'.format(
                     x, y, m, n, seed))
             service.generate(x, y, n, m, seed, filename)
 
@@ -44,7 +44,7 @@ def challenge_wspd():
 
 def _solve(algorithm, data_dir):
     os.makedirs(os.path.join(data_dir, algorithm), exist_ok=True)
-    for filename in os.listdir(data_dir):
+    for filename in sorted(os.listdir(data_dir)):
         if filename.endswith('.txt'):
             challenge_filename = os.path.join(data_dir, filename)
             output_filename = os.path.join(data_dir, algorithm, filename[:-4])
