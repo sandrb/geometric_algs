@@ -29,9 +29,16 @@ setup(
     install_requires=[
         # Cheese shop dependencies
         'docopt ~= 0.6.2',
-        'matplotlib ~= 1.5.3',
-        'pyvisgraph ~= 0.1.4',
+        # XXX: Cheese shop pyvisgraph does not support total ordering
+        # on the Point class, which in some cases makes Dijkstra fail.
+        # 'pyvisgraph ~= 0.1.4',
     ],
+    extras_requires={
+        'visualizer': [
+            # Cheese shop dependencies
+            'matplotlib ~= 1.5.3',
+        ],
+    },
     entry_points={
         'console_scripts': [
             'spanners = spanners.cli:main',

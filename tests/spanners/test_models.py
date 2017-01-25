@@ -137,6 +137,29 @@ class TestEdge:
         point, __ = edge
         assert models.Edge(point, point).length == 0
 
+    def test___reduce__(self, edge):
+        """
+        Test for `Edge.__reduce__`.
+
+        Args:
+            edge (Edge): The edge to test.
+
+        """
+        output = edge.__reduce__()
+        assert type(output) is tuple
+        assert len(output) == 2
+        assert output[0] == models.Edge
+        assert type(output[1]) is tuple
+        assert set(output[1]) == {models.Point(42, 666), models.Point(666, 42)}
+
+        point, __ = edge
+        edge = models.Edge(point, point)
+        output = edge.__reduce__()
+        assert output == (
+            models.Edge,
+            (point, point),
+        )
+
 
 class TestSolution:
     """
@@ -203,6 +226,22 @@ class TestSolution:
 
         """
         assert solution.weight == 882.4692629208113
+
+    def test___reduce__(self, solution, problem, edge):
+        """
+        Test for `Solution.__reduce__`.
+
+        Args:
+            solution (Solution): The solution to test.
+            problem (Problem): The expected problem.
+            edge (Edge): The expected edge in the solution,
+
+        """
+        output = solution.__reduce__()
+        assert output == (
+            models.Solution,
+            (problem, 1, 882.4692629208113, {edge}),
+        )
 
     def test___repr__(self, solution):
         """

@@ -86,6 +86,33 @@ def test_main_generate_value_error(mocker, argv):
     assert m_generate.call_count == 0
 
 
+@pytest.mark.parametrize('argv, algorithm, file_out', [
+    ('exec solve in.txt', None, None),
+    ('exec solve -a greedy in.txt', 'greedy', None),
+    ('exec solve -a wspd in.txt', 'wspd', None),
+    ('exec solve in.txt out.pickle', None, 'out.pickle'),
+    ('exec solve -a greedy in.txt out.pickle', 'greedy', 'out.pickle'),
+    ('exec solve -a wspd in.txt out.pickle', 'wspd', 'out.pickle'),
+])
+def test_main_solve(mocker, argv, algorithm, file_out):
+    """
+    Test for `cli.main` which tests the 'solve' command.
+
+    Args:
+        argv (str): The command used on the cli.
+        algorithm (str): The algorithm expected to be used.
+        file_out (str): The name of the output file.
+
+
+    """
+    m_solve = mocker.patch('spanners.cli.service.solve')
+    output = _patch_argv_and_call_main(mocker, argv.split())
+    assert output is None
+
+    assert m_solve.call_count == 1
+    assert m_solve.call_args == (('in.txt', algorithm, file_out),)
+
+
 @pytest.mark.parametrize('file_out', [
     None,
     'out.png',
@@ -111,21 +138,31 @@ def test_main_render_problem(mocker, file_out):
     assert m_render.call_args[0] == ('in.txt', file_out)
 
 
-@pytest.mark.parametrize('argv, algorithm, file_out', [
-    ('exec render solution in.txt', None, None),
-    ('exec render solution -a greedy in.txt', 'greedy', None),
-    ('exec render solution -a wspd in.txt', 'wspd', None),
-    ('exec render solution in.txt out.png', None, 'out.png'),
-    ('exec render solution -a greedy in.txt out.png', 'greedy', 'out.png'),
-    ('exec render solution -a wspd in.txt out.png', 'wspd', 'out.png'),
+@pytest.mark.parametrize('argv, algorithm, compute, file_out', [
+    ('exec render solution in.txt', None, False, None),
+    ('exec render solution -a greedy in.txt', 'greedy', False, None),
+    ('exec render solution -a wspd in.txt', 'wspd', False, None),
+    ('exec render solution in.txt out.png', None, False, 'out.png'),
+    ('exec render solution -a greedy in.txt out.png', 'greedy', False,
+     'out.png'),
+    ('exec render solution -a wspd in.txt out.png', 'wspd', False, 'out.png'),
+    ('exec render solution -c in.txt', None, True, None),
+    ('exec render solution -a greedy -c in.txt', 'greedy', True, None),
+    ('exec render solution -a wspd -c in.txt', 'wspd', True, None),
+    ('exec render solution -c in.txt out.png', None, True, 'out.png'),
+    ('exec render solution -a greedy -c in.txt out.png', 'greedy', True,
+     'out.png'),
+    ('exec render solution -a wspd -c in.txt out.png', 'wspd', True,
+     'out.png'),
 ])
-def test_main_render_solution(mocker, argv, algorithm, file_out):
+def test_main_render_solution(mocker, argv, algorithm, compute, file_out):
     """
     Test for `cli.main` which tests the 'render solution' command.
 
     Args:
         argv (str): The command used on the cli.
         algorithm (str): The algorithm expected to be used.
+        compute (bool): Whether the solution should be computed.
         file_out (str): The name of the output file.
 
     """
@@ -135,7 +172,7 @@ def test_main_render_solution(mocker, argv, algorithm, file_out):
     assert output is None
 
     assert m_render.call_count == 1
-    assert m_render.call_args[0] == ('in.txt', algorithm, file_out)
+    assert m_render.call_args[0] == ('in.txt', algorithm, compute, file_out)
 
 
 def test_main_show_problem(mocker):
@@ -154,18 +191,22 @@ def test_main_show_problem(mocker):
     assert m_show.call_args[0] == ('in.txt',)
 
 
-@pytest.mark.parametrize('argv, algorithm', [
-    ('exec show solution in.txt', None),
-    ('exec show solution -a greedy in.txt', 'greedy'),
-    ('exec show solution -a wspd in.txt', 'wspd'),
+@pytest.mark.parametrize('argv, algorithm, compute', [
+    ('exec show solution in.txt', None, False),
+    ('exec show solution -a greedy in.txt', 'greedy', False),
+    ('exec show solution -a wspd in.txt', 'wspd', False),
+    ('exec show solution -c in.txt', None, True),
+    ('exec show solution -a greedy -c in.txt', 'greedy', True),
+    ('exec show solution -a wspd -c in.txt', 'wspd', True),
 ])
-def test_main_show_solution(mocker, argv, algorithm):
+def test_main_show_solution(mocker, argv, algorithm, compute):
     """
     Test for `cli.main` which tests the 'show solution' command.
 
     Args:
         argv (str): The command used on the cli.
         algorithm (str): The algorithm expected to be used.
+        compute (bool): Whether the solution should be computed.
 
     """
     m_show = mocker.patch('spanners.cli.service.show_solution')
@@ -174,7 +215,7 @@ def test_main_show_solution(mocker, argv, algorithm):
     assert output is None
 
     assert m_show.call_count == 1
-    assert m_show.call_args[0] == ('in.txt', algorithm)
+    assert m_show.call_args[0] == ('in.txt', algorithm, compute)
 
 
 def _patch_argv_and_call_main(mocker, argv):

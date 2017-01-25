@@ -137,6 +137,20 @@ class Edge(frozenset):
             length = 0
         return length
 
+    def __reduce__(self):
+        """
+        Reduce the edge.
+
+        Returns:
+            The reduced edge.
+
+        """
+        if len(self) == 2:
+            p, q = self
+        else:
+            p, = q, = self
+        return type(self), (p, q)
+
 
 class Solution(set):
     """
@@ -205,6 +219,19 @@ class Solution(set):
         float: The weight of the result.
         """
         return sum(edge.length for edge in self)
+
+    def __reduce__(self):
+        """
+        Reduce the solution.
+
+        Returns:
+            The reduced solution.
+
+        """
+        return (
+            type(self),
+            (self.problem, self.max_edges, self.max_weight, set(self)),
+        )
 
     def __repr__(self):
         """

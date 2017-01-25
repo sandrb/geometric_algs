@@ -2,10 +2,32 @@
 This module holds the services.
 
 """
+import pickle
+
 from spanners import challenge
 from spanners import generator
 from spanners import greedy
-from spanners import visualizer
+try:
+    from spanners import visualizer
+except ImportError:
+    import types
+    import warnings
+
+    visualizer = types.SimpleNamespace()
+    method_names = (
+        'render_problem',
+        'render_solution',
+        'show_problem',
+        'show_solution',
+    )
+    for method_name in method_names:
+        setattr(
+            visualizer, method_name,
+            lambda *args, **kwargs: warnings.warn('requires matplotlib'))
+
+    del types
+    del method_name
+    del method_names
 from spanners import wspd
 
 
@@ -43,6 +65,29 @@ def generate(max_x, max_y, n, m, seed=None, filename=None, polygonizer=None):
     problem = generator.generate(max_x, max_y, n, m, seed, polygonizer)
     with open(filename, 'w') as f:
         challenge.dump(problem, f)
+
+
+def solve(challenge_filename, algorithm=None, pickle_filename=None):
+    """
+    Solve the data challenge and store the result.
+
+    Args:
+        challenge_filename (str): The filename of the data challenge
+            file which to solve.
+
+    Keyword Args:
+        algorithm (str): The algorithm to use for computing the
+            solution. Defaults to `greedy` if `None`.
+        pickle_filename (str): The filename to use for the pickle of
+            the solution. Defaults to '`challenge_filename`.pickle'.
+            A '.txt' suffix in the data challenge filename is ignored.
+
+    """
+    if not pickle_filename:
+        pickle_filename = _extract_base_filename(challenge_filename)
+        pickle_filename += '.pickle'
+    solution = _compute_solution(challenge_filename, algorithm)
+    _pickle_solution(solution, pickle_filename)
 
 
 def render_problem(challenge_filename, image_filename=None):
@@ -83,7 +128,9 @@ def show_problem(challenge_filename):
     visualizer.show_problem(problem)
 
 
-def render_solution(challenge_filename, algorithm=None, image_filename=None):
+def render_solution(
+        challenge_filename, algorithm=None, compute=False,
+        image_filename=None):
     """
     Render an image of a solution to a data challenge.
 
@@ -97,6 +144,8 @@ def render_solution(challenge_filename, algorithm=None, image_filename=None):
     Keyword Args:
         algorithm (str): The algorithm to use for computing the
             solution. Defaults to `greedy` if `None`.
+        compute (bool): Whether to compute or load the solution of the
+            challenge.
         image_filename (str): The filename to use for the image of the
             problem. Defaults to '`challenge_filename`_spanner.png'.
             A '.txt' suffix in the data challenge filename is ignored.
@@ -106,11 +155,11 @@ def render_solution(challenge_filename, algorithm=None, image_filename=None):
         image_filename = _extract_base_filename(challenge_filename)
         image_filename += '_spanner.png'
 
-    solution = _compute_solution(challenge_filename, algorithm)
+    solution = _get_solution(challenge_filename, algorithm, compute)
     visualizer.render_solution(solution, image_filename)
 
 
-def show_solution(challenge_filename, algorithm=None):
+def show_solution(challenge_filename, algorithm=None, compute=False):
     """
     Show the spanner corresponding to a solution of a data challenge.
 
@@ -125,9 +174,11 @@ def show_solution(challenge_filename, algorithm=None):
     Keyword Args:
         algorithm (str): The algorithm to use for computing the
             solution. Defaults to `greedy` if `None`.
+        compute (bool): Whether to compute or load the solution of the
+            challenge.
 
     """
-    solution = _compute_solution(challenge_filename, algorithm)
+    solution = _get_solution(challenge_filename, algorithm, compute)
     visualizer.show_solution(solution)
 
 
@@ -136,6 +187,25 @@ def _extract_base_filename(challenge_filename):
     if image_filename.lower().endswith('.txt'):
         image_filename = image_filename[:-4]
     return image_filename
+
+
+def _pickle_solution(solution, pickle_filename):
+    with open(pickle_filename, 'wb') as f:
+        pickle.dump(solution, f)
+
+
+def _get_solution(filename, algorithm, compute):
+    if compute:
+        solution = _compute_solution(filename, algorithm)
+    else:
+        solution = _unpickle_solution(filename)
+    return solution
+
+
+def _unpickle_solution(pickle_filename):
+    with open(pickle_filename, 'rb') as f:
+        solution = pickle.load(f)
+    return solution
 
 
 def _compute_solution(challenge_filename, algorithm):

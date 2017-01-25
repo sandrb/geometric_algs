@@ -2,8 +2,6 @@
 This module is for calculating the spanner trees using wspds.
 
 """
-import functools
-
 import pyvisgraph as vg
 
 from spanners import models
@@ -50,6 +48,10 @@ class Wspd:
             v (quadtrees.Quadtree): The quadtree containing points for
                 which to compute the well separated pair decomposition.
                 Defaults to `u`.
+
+        Returns:
+            Set[FrozenSet[quadtrees.Quadtree, quadtrees.Quadtree]]:
+                A set of well separated quadtree nodes.
 
         Note:
             Uses recursion.
@@ -126,27 +128,6 @@ class ObstacleWspd(Wspd):
         self.visibility_graph = vg.VisGraph()
         self.visibility_graph.build([[vg.Point(*p) for p in obstacle]])
 
-    def is_well_separated(self, u, v):
-        """
-        Chech whether two quadtrees are well separated.
-
-        Args:
-            u (quadtrees.Quadtree): The first quadtree.
-            v (quadtrees.Quadtree): The second quadtree.
-
-        Returns:
-            bool: Whether the two quadtrees are well separated.
-
-        """
-        separated = super().is_well_separated(u, v)
-        if not separated:
-            __, distance = self.shortest_path(u, v)
-            radius_u = u.bounding_box.edge.length / 2 if u.point else 0
-            radius_v = v.bounding_box.edge.length / 2 if v.point else 0
-            radius = max(radius_u, radius_v)
-            separated = distance - 2 * radius > self.s * radius
-        return separated
-
     def shortest_path(self, u, v):
         """
         Get the shortest path between two quadtrees.
@@ -158,27 +139,26 @@ class ObstacleWspd(Wspd):
             u (quadtrees.Quadtree): The first quadtree.
             v (quadtrees.Quadtree): The second quadtree.
 
+        Returns:
+            List[models.Edge]: List of edges representing the shortest
+                path.
+
         """
         rep_u = self.representative(u)
         rep_v = self.representative(v)
         if rep_u == rep_v:
-            path, distance = [], 0
+            path = []
         else:
-            path, distance = self._shortest_path(*sorted((rep_u, rep_v)))
-        return path, distance
+            vg_path = self.visibility_graph.shortest_path(
+                vg.Point(*rep_u), vg.Point(*rep_v))
+            path = [
+                self._convert_to_edge(p, q)
+                for p, q in zip(vg_path, vg_path[1:])]
+        return path
 
-    @functools.lru_cache(maxsize=None)
-    def _shortest_path(self, rep_u, rep_v):
-        rep_u = vg.Point(*rep_u)
-        rep_v = vg.Point(*rep_v)
-        path = self.visibility_graph.shortest_path(rep_u, rep_v)
-        edges = []
-        for p, q in zip(path, path[1:]):
-            p = self._convert_to_point(p)
-            q = self._convert_to_point(q)
-            edges.append(models.Edge(p, q))
-        distance = sum(edge.length for edge in edges)
-        return edges, distance
+    def _convert_to_edge(self, p, q):
+        return models.Edge(
+            self._convert_to_point(p), self._convert_to_point(q))
 
     def _convert_to_point(self, point):
         return models.Point(int(point.x), int(point.y))
@@ -220,8 +200,13 @@ def compute_spanner(problem):
     pairs = owspd.pairs(qt)
     edges = set(
         edge for u, v in pairs
-        for edge in owspd.shortest_path(u, v)[0])
-    max_edges = -1
-    max_weight = -1
+        for edge in owspd.shortest_path(u, v))
+    vg_edges = owspd.visibility_graph.visgraph.get_edges()
+    # XXX: max edges is edges in visibility graph of the obstacle.
+    max_edges = -1 * len(vg_edges)
+    # XXX: max weight is weight of edges in visibility of the obstacle.
+    max_weight = -1 * sum(
+        vg.visible_vertices.edge_distance(vg_edge.p1, vg_edge.p2)
+        for vg_edge in vg_edges)
     solution = models.Solution(problem, max_edges, max_weight, edges)
     return solution

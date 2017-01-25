@@ -4,8 +4,9 @@ Calculate geometric spanners amidst obstacles.
 
 Usage:
     {exec} generate X Y N M [-s SEED] FILE_OUT [-p POLY]
-    {exec} render (problem | solution [-a ALGO]) FILE_IN [FILE_OUT]
-    {exec} show (problem | solution [-a ALGO]) FILE_IN
+    {exec} solve [-a ALGO] FILE_IN [FILE_OUT]
+    {exec} render (problem | solution [-a ALGO] [-c]) FILE_IN [FILE_OUT]
+    {exec} show (problem | solution [-a ALGO] [-c]) FILE_IN
     {exec} (-h | --help)
     {exec} (-V | --version)
 
@@ -31,6 +32,9 @@ Arguments:
 Options:
     -a ALGO, --algorithm ALGO
         The algorithm to use for computing the solution.
+
+    -c, --compute
+        Compute the solution for visualization.
 
     -h, --help
         Show this screen.
@@ -84,15 +88,19 @@ def main():
         service.generate(
             x, y, n, m,
             seed=seed, filename=args['FILE_OUT'], polygonizer=polygonizer)
+    elif args['solve']:
+        service.solve(args['FILE_IN'], args['--algorithm'], args['FILE_OUT'])
     elif args['render'] and args['problem']:
         service.render_problem(args['FILE_IN'], args['FILE_OUT'])
     elif args['render'] and args['solution']:
         service.render_solution(
-            args['FILE_IN'], args['--algorithm'], args['FILE_OUT'])
+            args['FILE_IN'], args['--algorithm'], args['--compute'],
+            args['FILE_OUT'])
     elif args['show'] and args['problem']:
         service.show_problem(args['FILE_IN'])
     elif args['show'] and args['solution']:
-        service.show_solution(args['FILE_IN'], args['--algorithm'])
+        service.show_solution(
+            args['FILE_IN'], args['--algorithm'], args['--compute'])
     else:  # pragma: no cover
         raise SystemExit(docopt.printable_usage(doc))
 
