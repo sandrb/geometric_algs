@@ -72,7 +72,7 @@ def _generate_simple_polygon(max_x, max_y, m, seed=None, polygonizer=None):
 
 
 def _generate_points(max_x, max_y, n, obstacle=None, seed=None):
-    random.seed(None)
+    random.seed(seed)
     points = []
     unique_points = set()
     for i in range(n):
