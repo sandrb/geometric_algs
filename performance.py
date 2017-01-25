@@ -17,8 +17,8 @@ def random_data(x=10000, y=10000, seed=42):
     for m in _powers_of_two():
         for n in _powers_of_two():
             filename = os.path.join(
-                random_data_dir, '{}x{}_n-{}_m-{}_seed-{}.txt'.format(
-                    x, y, n, m, seed))
+                random_data_dir, '{}x{}_m-{}_n-{}_seed-{}.txt'.format(
+                    x, y, m, n, seed))
             service.generate(x, y, n, m, seed, filename)
 
 
