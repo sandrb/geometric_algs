@@ -41,6 +41,7 @@ The project can be installed using:
 
 .. code-block:: sh
 
+    $ pip install matplotlib~=1.5.3
     $ pip install -e .
 
 
@@ -66,12 +67,19 @@ Or if in windows: service.generate(1000,1000,40,20,"data")
 Note: first go to the correct directory, open python terminal and import service (from spanners import service)
 
 
-To view the problem of a data challenge file in an image run the following
-command:
+To view the problem of a data challenge file run the following command:
 
 .. code-block:: sh
 
-    $ spanners visualize data.txt data.png
+    $ spanners show problem data.txt
+
+
+To view the solution of a data challenge file run the following command:
+
+.. code-block:: sh
+
+    $ spanners show solution -a wspd -c data.txt
+
 
 
 Tests
