@@ -197,6 +197,7 @@ def compute_spanner(problem):
     s = 4 * (problem.ratio + 1) / (problem.ratio - 1)
     owspd = ObstacleWspd(problem.obstacle, s)
     qt = quadtrees.Quadtree(problem.points)
+    qt.compress()
     pairs = owspd.pairs(qt)
     edges = set(
         edge for u, v in pairs
